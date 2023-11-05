@@ -1,71 +1,112 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Net;
+using System.Drawing;
 
 class Program
 {
-    static void FindLongestPath(int[,] map, int Sx, int Sy, int Cx, int Cy, List<(int, int)> currentPath, ref List<(int, int)> longestPath)
+    static int stepsIntMax = 0;
+    static int[] dx = { -1, 1, 0, 0 };
+    static int[] dy = { 0, 0, -1, 1 };
+    static List<(int, int)> pathMax = new List<(int, int)>();
+    static void FindLongestPathDown(int[,]map, int Sx, int Sy, int stepsInt,List<(int,int)> path, List<(int,int)> prevPath,int Cx,int Cy)
     {
-        int[] dx = { -1, 1, 0, 0 };
-        int[] dy = { 0, 0, -1, 1 };
+       
+        bool hasLowerValueNeighbor = false;
+
+        List<(int, int)> currentPath = new List<(int, int)>();
+        if (prevPath.Count > 0)
+        {
+            foreach (var element in prevPath)
+            {
+                currentPath.Add(element);
+            }
+        }
+        currentPath.Add((Sx, Sy));
 
         for (int i = 0; i < 4; i++)
         {
-            
             int newX = Sx + dx[i];
             int newY = Sy + dy[i];
-            if (newX >= 0 && newY >= 0 && newX < map.GetLength(0) - 1 && newY < map.GetLength(1) - 1)
+            if (newX >= 0 && newY >= 0 && newX < map.GetLength(0) && newY < map.GetLength(1))
             {
-                if (map[newX, newY] > map[Sx, Sy])
+                if (Cx==Sx && Cy==Sy)
                 {
-                    Console.WriteLine(newX + " " + newY + " valid pos. Rep. n. ");
-                    FindLongestPath(map,newX,newY,Cx,Cy,currentPath,ref longestPath);
+                    if (stepsInt > stepsIntMax)
+                    {
+                        pathMax = currentPath;
+                        stepsIntMax = stepsInt;
+                    }// Store the entire path
+                    
+                    return;
                 }
-                else
+                int newValue = map[newY, newX];
+                int oldValue = map[Sy, Sx];
+                if (newValue < oldValue)
                 {
-                    Console.WriteLine(newX + " " + newY + " not valid pos.");
+                    hasLowerValueNeighbor = true;
+                    // Add the current coordinates to the current path
+
+                    FindLongestPathDown(map, newX, newY, stepsInt + 1, path, currentPath, Cx, Cy);
+                    if(stepsInt+1>map.Length)
+                    {
+                        Console.WriteLine("Something is fucky");
+                    }
                 }
             }
- 
         }
+        if (hasLowerValueNeighbor !=true)
+        {
+            return;
+        }
+
     }
-  /*  static void FindLongestPath(int[,] map, int Sx, int Sy, int Cx, int Cy, List<(int, int)> currentPath, ref List<(int, int)> longestPath)
+    static void FindLongestPath(int[,] map, int Sx, int Sy, List<(int, int)> endpoints, Dictionary<(int, int), int> steps, int stepsInt, Dictionary<(int, int), List<(int, int)>> stepCoordinates, List<(int, int)> prevPath)
     {
-        // If the current position matches the ending coordinates, update the longest path
-        if (Sx == Cx && Sy == Cy)
-        {
-            if (currentPath.Count > longestPath.Count)
-            {
-                longestPath.Clear();
-                longestPath.AddRange(currentPath);
+        
+        bool hasHigherValueNeighbor = false;
+
+        List<(int, int)> currentPath = new List<(int, int)>();
+        if (prevPath.Count > 0) {
+            foreach (var element in prevPath) {
+                currentPath.Add(element);
             }
-            return; // Terminate the recursion
         }
-
-        // Define possible neighbor positions (up, down, left, right)
-        int[] dx = { -1, 1, 0, 0 };
-        int[] dy = { 0, 0, -1, 1 };
-
-        foreach (int i in Enumerable.Range(0, 4))
+        currentPath.Add((Sx, Sy));
+        for (int i = 0; i < 4; i++)
         {
             int newX = Sx + dx[i];
             int newY = Sy + dy[i];
-
-            // Check if the neighbor is within the map boundaries
-            if (newX >= 0 && newX < map.GetLength(0) && newY >= 0 && newY < map.GetLength(1))
+            if (newX >= 0 && newY >= 0 && newX < map.GetLength(0) && newY < map.GetLength(1))
             {
-                // Check if the neighbor has a higher value
-                if (map[newX, newY] > map[Sx, Sy])
+                int newValue = map[newY, newX];
+                int oldValue = map[Sy, Sx];
+                if (newValue > oldValue)
                 {
-                    // Move to the neighbor with the higher value
-                    currentPath.Add((newX, newY));
-                    FindLongestPath(map, newX, newY, Cx, Cy, currentPath, ref longestPath);
-                    currentPath.RemoveAt(currentPath.Count - 1); // Remove the last position for backtracking
+                    hasHigherValueNeighbor = true;
+                    // Add the current coordinates to the current path
+                    
+                    FindLongestPath(map, newX, newY, endpoints, steps, stepsInt + 1, stepCoordinates, currentPath);
                 }
             }
         }
+        if (!hasHigherValueNeighbor)
+        {
+            if (!endpoints.Contains((Sx, Sy)))
+            {
+                endpoints.Add((Sx, Sy));
+                steps[(Sx, Sy)] = stepsInt;
+                // Store the entire path to this endpoint in the dictionary
+                stepCoordinates[(Sx, Sy)] = new List<(int, int)>(currentPath);
+            }
+            else if (steps[(Sx,Sy)] < stepsInt)
+            {
+                steps[(Sx, Sy)] = stepsInt;
+                stepCoordinates[(Sx, Sy)] = new List<(int, int)>(currentPath);
+            }
+        }
     }
-  */
     static void Main()
     {
         string file = "vstup.in";
@@ -113,17 +154,32 @@ class Program
         }
         Console.WriteLine("Map filled with values.");
         // Displaying the map
-        List<(int, int)> currentPath = new List<(int, int)>();
-        List<(int, int)> longestPath = new List<(int, int)>();
 
-        FindLongestPath(map, Sx, Sy, Cx, Cy, currentPath, ref longestPath);
-        Console.WriteLine("The longest path length is: " + longestPath.Count);
-        Console.WriteLine("Sequence of moves:");
-        foreach (var position in longestPath)
+        List<(int, int)> endpoints = new List<(int, int)>();
+        Dictionary<(int, int), int> steps = new Dictionary<(int, int), int>();
+        Dictionary<(int, int), List<(int, int)>> stepCoordinates = new Dictionary<(int, int), List<(int, int)>>(); 
+        List<(int, int)> prevPath = new List<(int, int)>();
+        List<(int,int)> path = new List<(int, int)>();
+
+        FindLongestPath(map, Sx, Sy, endpoints, steps, 0, stepCoordinates,prevPath);
+
+        Console.WriteLine("Endpoint coordinates:");
+        foreach (var endpoint in endpoints)
         {
-            Console.WriteLine("Move to: (" + position.Item1 + ", " + position.Item2 + ")");
+            Console.WriteLine("Endpoint: (" + endpoint.Item1 + ", " + endpoint.Item2 + "), Number of steps: " + steps[endpoint]);
+            foreach (var i in stepCoordinates[(endpoint.Item1, endpoint.Item2)])
+            {
+                Console.WriteLine(i.ToString());
+            }
         }
-        Console.ReadKey();
-
+        foreach (var endpoint in endpoints)
+        {
+            FindLongestPathDown(map, endpoint.Item1, endpoint.Item2, 0, path, prevPath, Cx, Cy);
+        }
+        for (int i = 0; i < pathMax.Count; i++)
+        {
+            Console.WriteLine(pathMax[i].Item1 + " "+ pathMax[i].Item2);
+        }
+        Console.WriteLine("Steps: "+ stepsIntMax);
     }
 }
