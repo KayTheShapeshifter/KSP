@@ -4,8 +4,32 @@ using System.Collections.Generic;
 
 class Program
 {
-
     static void FindLongestPath(int[,] map, int Sx, int Sy, int Cx, int Cy, List<(int, int)> currentPath, ref List<(int, int)> longestPath)
+    {
+        int[] dx = { -1, 1, 0, 0 };
+        int[] dy = { 0, 0, -1, 1 };
+
+        for (int i = 0; i < 4; i++)
+        {
+            
+            int newX = Sx + dx[i];
+            int newY = Sy + dy[i];
+            if (newX >= 0 && newY >= 0 && newX < map.GetLength(0) - 1 && newY < map.GetLength(1) - 1)
+            {
+                if (map[newX, newY] > map[Sx, Sy])
+                {
+                    Console.WriteLine(newX + " " + newY + " valid pos. Rep. n. ");
+                    FindLongestPath(map,newX,newY,Cx,Cy,currentPath,ref longestPath);
+                }
+                else
+                {
+                    Console.WriteLine(newX + " " + newY + " not valid pos.");
+                }
+            }
+ 
+        }
+    }
+  /*  static void FindLongestPath(int[,] map, int Sx, int Sy, int Cx, int Cy, List<(int, int)> currentPath, ref List<(int, int)> longestPath)
     {
         // If the current position matches the ending coordinates, update the longest path
         if (Sx == Cx && Sy == Cy)
@@ -41,7 +65,7 @@ class Program
             }
         }
     }
-
+  */
     static void Main()
     {
         string file = "vstup.in";
